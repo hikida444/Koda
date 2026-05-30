@@ -25,7 +25,7 @@ jobs:
         run: npm ci
 
       - name: Build Mac App
-        run: npm run build -- --mac
+        run: npm run build -- --mac --universal
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
