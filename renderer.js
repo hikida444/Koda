@@ -102,6 +102,8 @@ if (drawerTrayToggle) {
 }
 
 // ONBOARDING CONTROLLER
+
+
 document.addEventListener('DOMContentLoaded', () => {
   // Theme is applied instantly in index.html <script> to prevent flash.
   // Sync drawer toggle switch state with current theme
@@ -545,7 +547,7 @@ const btnGithubLink = document.getElementById('btn-github-link');
 if (btnGithubLink) {
   btnGithubLink.addEventListener('click', () => {
     if (window.electronAPI && window.electronAPI.openExternal) {
-      window.electronAPI.openExternal('https://github.com/');
+      window.electronAPI.openExternal('https://github.com/hikida444/Koda');
     }
   });
 }

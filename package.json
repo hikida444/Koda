@@ -1,15 +1,33 @@
 {
-  "name": "timemanagementapp",
+  "name": "koda",
   "version": "1.0.0",
-  "description": "",
+  "description": "Минималистичный трекер времени для глубокого фокуса",
   "main": "main.js",
   "scripts": {
-    "start": "electron ."
+    "start": "electron .",
+    "build": "electron-builder"
   },
   "keywords": [],
-  "author": "",
+  "author": "Koda",
   "license": "ISC",
   "devDependencies": {
-    "electron": "^30.0.0"
+    "electron": "^30.0.0",
+    "electron-builder": "^24.13.3"
+  },
+  "build": {
+    "appId": "com.koda.app",
+    "productName": "Koda",
+    "directories": {
+      "output": "dist",
+      "buildResources": "build"
+    },
+    "mac": {
+      "target": ["dmg"],
+      "icon": "build/icon.png"
+    },
+    "win": {
+      "target": ["nsis"],
+      "icon": "build/icon.png"
+    }
   }
 }

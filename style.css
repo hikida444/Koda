@@ -39,6 +39,22 @@ body {
   transition: color 0.8s ease, background-color 0.8s ease;
 }
 
+/* Global Custom Scrollbar */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: var(--text-muted);
+  border-radius: 10px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: var(--text-secondary);
+}
+
 .app-title, .splash-quote, .question-title, #input-username, 
 .avatar-label, .welcome-label, .user-greeting, .focus-dashboard-card p, 
 .focus-dashboard-card .subtext, .theme-toggle-btn, .logo-center, line, circle {
