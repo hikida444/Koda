@@ -111,7 +111,7 @@ document.addEventListener('DOMContentLoaded', () => {
     drawerThemeToggle.checked = !document.body.classList.contains('light-theme');
   }
   if (drawerTrayToggle) {
-    drawerTrayToggle.checked = localStorage.getItem('koda_tray_timer') !== 'false';
+    drawerTrayToggle.checked = localStorage.getItem('koda_tray_timer') === 'true';
   }
 
   const savedName = localStorage.getItem('koda_user_name');
@@ -359,7 +359,7 @@ function updateTimerDisplay() {
   const timeStr = formatTime(elapsedSeconds);
   if (focusSessionTimer) focusSessionTimer.innerText = timeStr;
   if (window.electronAPI) {
-    const showTray = localStorage.getItem('koda_tray_timer') !== 'false';
+    const showTray = localStorage.getItem('koda_tray_timer') === 'true';
     window.electronAPI.updateTrayTimer(showTray ? timeStr : '');
   }
 }
@@ -445,10 +445,6 @@ btnFocusPause.addEventListener('click', () => {
     isTimerRunning = false;
     btnFocusPause.innerHTML = `<svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>`;
   } else {
-    // Prevent starting if timer is 0
-    if (focusMode === 'timer' && currentTimerRemaining <= 0) {
-      currentTimerRemaining = timerDurationSeconds; // Reset timer
-    }
     isTimerRunning = true;
     btnFocusPause.innerHTML = `<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="6" y="4" width="4" height="16"/><rect x="14" y="4" width="4" height="16"/></svg>`;
     timerInterval = setInterval(tickTimer, 1000);
@@ -740,6 +736,8 @@ if (btnStatsBack) {
 
 const STATS_COLORS = ['#ff2a5f', '#00f2fe', '#f8d347', '#7f00ff', '#34C759', '#FF9500'];
 
+let activeStatsDateStr = null;
+
 function generateStats() {
   const sessions = JSON.parse(localStorage.getItem('koda_sessions') || '[]');
   const now = new Date();
@@ -751,38 +749,26 @@ function generateStats() {
     const d = new Date(now);
     d.setDate(now.getDate() - i);
     const dateStr = d.toISOString().split('T')[0];
-    // Short weekday name (e.g. Пн, Вт)
     const weekday = d.toLocaleDateString('ru-RU', { weekday: 'short' });
     days.push({ dateStr, weekday });
     dayTotals[dateStr] = 0;
   }
 
-  const categoryTotals = {};
-  let weekTotalSeconds = 0;
-
   sessions.forEach(s => {
     const sessionDateStr = s.date.split('T')[0];
     if (dayTotals[sessionDateStr] !== undefined) {
       dayTotals[sessionDateStr] += s.duration;
-      weekTotalSeconds += s.duration;
-      
-      if (!categoryTotals[s.category]) {
-        categoryTotals[s.category] = 0;
-      }
-      categoryTotals[s.category] += s.duration;
     }
   });
 
-  document.getElementById('stats-total-week').innerText = formatTime(weekTotalSeconds);
-
   // Render Bar Chart
-  const maxDaySeconds = Math.max(...Object.values(dayTotals), 1); // Avoid div by 0
+  const maxDaySeconds = Math.max(...Object.values(dayTotals), 1);
   const barChartContainer = document.getElementById('stats-bar-chart');
   barChartContainer.innerHTML = '';
   
   days.forEach(day => {
     const seconds = dayTotals[day.dateStr];
-    const heightPercent = Math.max((seconds / maxDaySeconds) * 100, 2); // Min 2% height
+    const heightPercent = Math.max((seconds / maxDaySeconds) * 100, 2);
     
     const h = Math.floor(seconds / 3600);
     const m = Math.floor((seconds % 3600) / 60);
@@ -792,29 +778,67 @@ function generateStats() {
 
     const div = document.createElement('div');
     div.className = 'bar-wrapper';
+    if (activeStatsDateStr === day.dateStr) {
+      div.classList.add('active');
+    } else if (activeStatsDateStr !== null) {
+      div.classList.add('inactive');
+    }
+
     div.innerHTML = `
       <div class="bar-value">${valStr}</div>
       <div class="bar-fill" style="height: ${heightPercent}%"></div>
       <div class="bar-label">${day.weekday}</div>
     `;
+    
+    div.addEventListener('click', () => {
+      if (activeStatsDateStr === day.dateStr) {
+        activeStatsDateStr = null;
+      } else {
+        activeStatsDateStr = day.dateStr;
+      }
+      generateStats();
+    });
+
     barChartContainer.appendChild(div);
   });
 
-  // Render Doughnut Chart & Legend
+  renderDoughnutChart(sessions, days);
+}
+
+function renderDoughnutChart(sessions, days) {
+  const categoryTotals = {};
+  let totalSeconds = 0;
+
+  sessions.forEach(s => {
+    const sessionDateStr = s.date.split('T')[0];
+    const isWithinWeek = days.some(d => d.dateStr === sessionDateStr);
+    if (!isWithinWeek) return;
+
+    if (activeStatsDateStr === null || activeStatsDateStr === sessionDateStr) {
+      if (!categoryTotals[s.category]) {
+        categoryTotals[s.category] = 0;
+      }
+      categoryTotals[s.category] += s.duration;
+      totalSeconds += s.duration;
+    }
+  });
+
+  document.getElementById('stats-total-week').innerText = formatTime(totalSeconds);
+
   const doughnutSvg = document.getElementById('stats-doughnut-chart');
   const legendContainer = document.getElementById('stats-legend');
   
-  // Clear previous
   doughnutSvg.innerHTML = `<circle cx="50" cy="50" r="40" class="doughnut-circle doughnut-bg" />`;
   legendContainer.innerHTML = '';
 
   const catEntries = Object.entries(categoryTotals).sort((a, b) => b[1] - a[1]);
+  if (catEntries.length === 0) return; // empty circle without data
   
   let currentOffset = 0;
-  const circumference = 2 * Math.PI * 40; // r=40
+  const circumference = 2 * Math.PI * 40;
 
   catEntries.forEach(([cat, seconds], index) => {
-    const percentage = seconds / Math.max(weekTotalSeconds, 1);
+    const percentage = seconds / Math.max(totalSeconds, 1);
     const strokeLength = percentage * circumference;
     const color = STATS_COLORS[index % STATS_COLORS.length];
 
@@ -825,23 +849,19 @@ function generateStats() {
     circle.setAttribute('class', 'doughnut-circle');
     circle.setAttribute('stroke', color);
     
-    // gap for aesthetics
     const gap = catEntries.length > 1 ? 2 : 0;
     
-    // Animate stroke dasharray
     circle.setAttribute('stroke-dasharray', `0 ${circumference}`);
     circle.setAttribute('stroke-dashoffset', -currentOffset);
     
     doughnutSvg.appendChild(circle);
 
-    // Trigger animation
     setTimeout(() => {
       circle.setAttribute('stroke-dasharray', `${Math.max(strokeLength - gap, 0)} ${circumference}`);
     }, 50);
 
     currentOffset += strokeLength;
 
-    // Add legend item
     const legItem = document.createElement('div');
     legItem.className = 'legend-item';
     

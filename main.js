@@ -36,7 +36,6 @@ function createWindow() {
 
 app.whenReady().then(() => {
   createWindow();
-  createTray();
 
   app.on('activate', function () {
     if (mainWindow === null) {
@@ -66,9 +65,9 @@ ipcMain.on('open-external', (event, url) => {
 
 // Setup Tray
 function createTray() {
-  const emptyImg = nativeImage.createEmpty();
-  tray = new Tray(emptyImg);
-  tray.setTitle('●');
+  const iconPath = path.join(__dirname, 'build', 'trayTemplate@2x.png');
+  const trayIcon = nativeImage.createFromPath(iconPath);
+  tray = new Tray(trayIcon);
   tray.setToolTip('Koda');
   
   tray.on('click', () => {
@@ -81,10 +80,20 @@ function createTray() {
 
 // IPC handler for updating tray text
 ipcMain.on('update-tray-timer', (event, timeStr) => {
-  if (tray) {
-    tray.setTitle(timeStr ? `●  ${timeStr}` : '●');
+  if (timeStr) {
+    if (!tray) {
+      const emptyImg = nativeImage.createEmpty();
+      tray = new Tray(emptyImg);
+    }
+    tray.setTitle(timeStr);
+  } else {
+    if (tray) {
+      tray.destroy();
+      tray = null;
+    }
   }
 });
+
 
 // Resize window handler when transitioning to main app screen
 ipcMain.on('window-resize', (event, { width, height, alwaysOnTop }) => {

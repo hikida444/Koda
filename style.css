@@ -899,9 +899,9 @@ body.light-theme {
   --border-color: rgba(0, 0, 0, 0.06);
   --border-focus: rgba(0, 0, 0, 0.15);
   
-  --text-primary: #19213d;
-  --text-secondary: #4a5568;
-  --text-muted: #64748b;
+  --text-primary: #1a1a1a;
+  --text-secondary: #666666;
+  --text-muted: #999999;
   --neon-cyan: #4facfe;
 }
 
@@ -1185,6 +1185,10 @@ body.light-theme .edit-categories-btn:hover {
   background: rgba(0, 0, 0, 0.02);
 }
 
+body.light-theme .edit-categories-btn.primary-btn:hover {
+  background: var(--text-primary);
+}
+
 .edit-categories-btn.primary-btn {
   background: var(--text-primary);
   color: var(--bg-color);
@@ -1311,8 +1315,18 @@ input:checked + .slider:before {
   opacity: 0;
   transition: opacity 0.3s;
 }
+.bar-wrapper {
+  cursor: pointer;
+  transition: opacity 0.3s;
+}
 .bar-wrapper:hover .bar-value {
   opacity: 1;
+}
+.bar-wrapper.inactive {
+  opacity: 0.3;
+}
+.bar-wrapper.active .bar-fill {
+  box-shadow: 0 0 10px rgba(0, 242, 254, 0.4);
 }
 /* Doughnut Chart */
 .doughnut-chart-container {
