@@ -16,6 +16,7 @@ function createWindow() {
       nodeIntegration: false,
       contextIsolation: true,
       preload: path.join(__dirname, 'preload.js'),
+      backgroundThrottling: false
     },
     // On macOS, this makes the titlebar disappear and keeps standard rounded corners
     titleBarStyle: 'hidden',

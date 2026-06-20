@@ -344,6 +344,8 @@ btnFinishOnboarding.addEventListener('click', () => {
 // --- DASHBOARD LOGIC ---
 let activeCategory = '';
 let elapsedSeconds = 0;
+let accumulatedSeconds = 0;
+let sessionStartTime = null;
 let isTimerRunning = false;
 let timerInterval = null;
 
@@ -420,7 +422,9 @@ function updateDashboardData() {
 function startFocusSession(category) {
   if (timerInterval) clearInterval(timerInterval);
   activeCategory = category;
+  accumulatedSeconds = 0;
   elapsedSeconds = 0;
+  sessionStartTime = Date.now();
   isTimerRunning = true;
   if (focusCategoryLabel) focusCategoryLabel.innerText = category;
   
@@ -435,17 +439,25 @@ function startFocusSession(category) {
 }
 
 function tickTimer() {
-  elapsedSeconds++;
-  updateTimerDisplay();
+  if (isTimerRunning && sessionStartTime) {
+    const currentRunSeconds = Math.floor((Date.now() - sessionStartTime) / 1000);
+    elapsedSeconds = accumulatedSeconds + currentRunSeconds;
+    updateTimerDisplay();
+  }
 }
 
 btnFocusPause.addEventListener('click', () => {
   if (isTimerRunning) {
     clearInterval(timerInterval);
     isTimerRunning = false;
+    if (sessionStartTime) {
+      accumulatedSeconds += Math.floor((Date.now() - sessionStartTime) / 1000);
+      sessionStartTime = null;
+    }
     btnFocusPause.innerHTML = `<svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>`;
   } else {
     isTimerRunning = true;
+    sessionStartTime = Date.now();
     btnFocusPause.innerHTML = `<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="6" y="4" width="4" height="16"/><rect x="14" y="4" width="4" height="16"/></svg>`;
     timerInterval = setInterval(tickTimer, 1000);
   }
@@ -453,6 +465,10 @@ btnFocusPause.addEventListener('click', () => {
 
 btnFocusExit.addEventListener('click', () => {
   clearInterval(timerInterval);
+  if (isTimerRunning && sessionStartTime) {
+    accumulatedSeconds += Math.floor((Date.now() - sessionStartTime) / 1000);
+    elapsedSeconds = accumulatedSeconds;
+  }
   isTimerRunning = false;
   
   if (window.electronAPI) {
